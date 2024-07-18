@@ -1,14 +1,16 @@
-# Makefile for fujinet-build-tools makefiles
+# Makefile for CATER 2024
+# this is using the local makefiles, copied from the fujinet-build-tools/makefiles 
+# based on the work done by fenrock but not supported by him
 
 # Set the TARGETS and PROGRAM values as required.
-
 TARGETS = apple2enh atari
 PROGRAM := cater
 
 SUB_TASKS := clean disk test release
 .PHONY: all help $(SUB_TASKS)
 
-export FUJINET_BUILD_TOOLS_DIR := ../../fujinet-build-tools
+# Set the FUJINET_BUILD_TOOLS_DIR to be the same directory as we are in now....
+export FUJINET_BUILD_TOOLS_DIR := .
 export FUJINET_LIB_VERSION := 4.3.1
 
 all:
