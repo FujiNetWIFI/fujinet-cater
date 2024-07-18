@@ -1,5 +1,7 @@
 # COMPILE FLAGS
 
+$(info >>>>Starting custom-atari.mk)
+
 # reserved memory for graphics
 # LDFLAGS += -Wl -D,__RESERVED_MEMORY__=0x2000
 
@@ -13,10 +15,14 @@ SUFFIX = .com
 DISK_TASKS += .atr
 
 .atr:
+	$(info >>>> MAKING ATR)
+
 	$(call MKDIR,$(DIST_DIR)/atr)
 	cp $(DIST_DIR)/$(PROGRAM_TGT)$(SUFFIX) $(DIST_DIR)/atr/$(PROGRAM)$(SUFFIX)
 	$(call RMFILES,$(DIST_DIR)/*.atr)
-	dir2atr -S $(DIST_DIR)/$(PROGRAM).atr $(DIST_DIR)/atr
+	cp ../fujinet-build-tools/picoboot.bin $(DIST_DIR)/
+	dir2atr -m -S -B $(DIST_DIR)/picoboot.bin $(DIST_DIR)/$(PROGRAM).atr $(DIST_DIR)/atr
+
 
 
 ################################################################
