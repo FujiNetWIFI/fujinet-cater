@@ -1,8 +1,9 @@
 ###################################################################
 # Platform Mapping, OS specifics, and Emulator settings
 ###################################################################
-$(info >>>>Starting os.mk for $(CURRENT_TARGET))
-
+ifeq ($(DEBUG),true)
+    $(info >Starting os.mk)
+endif
 
 
 ifeq ($(CURRENT_TARGET),)
