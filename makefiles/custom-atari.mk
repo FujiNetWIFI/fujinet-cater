@@ -1,29 +1,38 @@
+###################################################################
+# Atari
+###################################################################
+ifeq ($(DEBUG),true)
+    $(info >>>Starting custom-atari.mk)
+endif
+
+################################################################
 # COMPILE FLAGS
-
-$(info >>>>Starting custom-atari.mk)
-
-# reserved memory for graphics
-# LDFLAGS += -Wl -D,__RESERVED_MEMORY__=0x2000
-
-#LDFLAGS += --start-addr 0x4400
-#LDFLAGS += -C cfg/atari.cfg
+LDFLAGS += -C src/atari/cater.cfg
 
 ################################################################
 # DISK creation
 
 SUFFIX = .com
 DISK_TASKS += .atr
+PICOBOOT_DOWNLOAD_URL = https://github.com/FujiNetWIFI/assets/releases/download/picobin/picoboot.bin
+
+# atari cache dir
+ATARI_CACHE_DIR := $(CACHE_DIR)/atari
 
 .atr:
-	$(info >>>> MAKING ATR)
-
 	$(call MKDIR,$(DIST_DIR)/atr)
+	$(call MKDIR,$(CACHE_DIR))
+	$(call MKDIR,$(ATARI_CACHE_DIR))
 	cp $(DIST_DIR)/$(PROGRAM_TGT)$(SUFFIX) $(DIST_DIR)/atr/$(PROGRAM)$(SUFFIX)
-	$(call RMFILES,$(DIST_DIR)/*.atr)
-	cp ../fujinet-build-tools/picoboot.bin $(DIST_DIR)/
-	dir2atr -m -S -B $(DIST_DIR)/picoboot.bin $(DIST_DIR)/$(PROGRAM).atr $(DIST_DIR)/atr
-
-
+	@if [ -f $(DIST_DIR)/$(PROGRAM).atr ] ; then \
+	  rm $(DIST_DIR)/$(PROGRAM).atr ; \
+	fi ;
+	@if [ ! -f $(ATARI_CACHE_DIR)/picoboot.bin ] ; then \
+		echo "Downloading picoboot.bin"; \
+		curl -sL $(PICOBOOT_DOWNLOAD_URL) -o $(ATARI_CACHE_DIR)/picoboot.bin; \
+	fi
+	dir2atr -m -S -B $(ATARI_CACHE_DIR)/picoboot.bin $(DIST_DIR)/$(PROGRAM).atr $(DIST_DIR)/atr
+	rm -rf $(DIST_DIR)/atr
 
 ################################################################
 # TESTING / EMULATOR
@@ -41,13 +50,9 @@ ALTIRRA ?= $(ALTIRRA_HOME)/Altirra64.exe \
 ATARI800 ?= $(ATARI800_HOME)/atari800 \
   -xl -nobasic -ntsc -xl-rev custom -config atari800-debug.cfg -run
 
-# split these out by all targets, this is needed so that in os.mk, it will get the right value as other platforms do run different emulators for targets
-# e.g. "vice" uses "x64sc", "xpet", ... for the different machines, unlike atari that uses Altirra for all different "models" (XL/XE etc).
 atari_EMUCMD := $($(ATARI_EMULATOR))
-atarixl_EMUCMD := $($(ATARI_EMULATOR))
 
 ifeq ($(ATARI_EMULATOR),)
 atari_EMUCMD := $(ALTIRRA)
-atarixl_EMUCMD := $(ALTIRRA)
 endif
 
