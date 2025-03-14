@@ -25,15 +25,7 @@ char device[256];
 uint8_t buffer[1024];
 
 void vt100_beep(void) {
-#ifdef __APPLE2__
-  uint8_t x = wherex();
-#endif
-
   putchar('\a');
-
-#ifdef __APPLE2__
-  gotox(x);
-#endif
 }
 
 void vt100_quit(void) {
@@ -75,10 +67,6 @@ static void readline(char *s)
     cursor(1);
 
     do {
-#ifdef __APPLE2__
-      gotox(i);
-#endif
-
       c = cgetc();
 
       if (isprint(c)) {
