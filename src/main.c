@@ -17,6 +17,14 @@ extern void vt100_screen_rows;
 #pragma zpsym ("vt100_screen_cols");
 #pragma zpsym ("vt100_screen_rows");
 
+#if defined(__ATARI__)
+bool trip=false;       /* Used for PROCEED interrupt. */
+uint8_t old_enabled=0; /* Saved interrupt state */
+uint8_t old_connected=false; /* Old connected state */
+void *old_vprced;      /* Saved PROCEED interrupt vector */
+extern void ih();      /* PROCEED interrupt handler   */
+#endif /* __ATARI__*/
+
 #if defined(__ATARI__) || defined(__C64__)
 int16_t get_key_if_available(void);
 #endif
@@ -40,13 +48,49 @@ void __fastcall__ vt100_send_string(uint8_t *s) {
   network_write(device, s, strlen((char *)s));
 }
 
+/**
+ * @brief Set up network interrupts, if available.
+ */
+void network_interrupt_enable(void)
+{
+#if defined(__ATARI__)
+  old_vprced  = OS.vprced;         /* Store old VPRCED vector for exit  */
+  old_enabled = PIA.pactl & 1;     /* Keep track of old interrupt state */
+  PIA.pactl   &= (~1);             /* Turn off interrupts momentarily.  */
+  OS.vprced   = ih;                /* Set interrupt handler.            */
+  PIA.pactl   |= 1;                /* Tell PIA we are ready.            */
+#endif /* __ATARI__*/
+}
+
+/**
+ * @brief Tear down interrupt when we're exiting.
+ */
+void network_interrupt_disable(void)
+{
+#if defined(__ATARI__)
+  PIA.pactl &= (~1); /* Disable interrupts. */
+  OS.vprced  = old_vprced;      /* Bring back old PROCEED vector */
+  PIA.pactl |= old_enabled;    /* Bring back original PACTL state. */
+#endif /* __ATARI__ */
+}
+
 static bool connected(void)
 {
   uint16_t bw;
   uint8_t c;
   uint8_t err;
 
+#if defined(__ATARI__)
+  if (!trip)
+    return old_connected;
+#endif /* __ATARI__ */
+  
   network_status(device, &bw, &c, &err);
+
+#if defined(__ATARI__)
+  old_connected = c;
+#endif /* __ATARI__ */
+
   return c;
 }
 
@@ -120,10 +164,19 @@ void main(int argc, char *argv[])
     puts(device + 2);
     quit();
   }
+
+  /* Only enable interrupts when we are successfully connected. */
+  network_interrupt_enable();
   
   vt100_init_terminal();
 
   while (connected()) {
+
+#if defined(__ATARI__)
+    if (!trip)
+      goto read_atari_keyboard;
+#endif /* __ATARI__ */
+    
     retval = network_read_nb(device, buffer, sizeof(buffer));
     if (retval > 0) {
       bufptr = buffer;
@@ -131,8 +184,9 @@ void main(int argc, char *argv[])
         vt100_process_inbound_char(*bufptr++);
       }
     }
-
+    
 #if defined(__ATARI__) || defined(__C64__)
+  read_atari_keyboard:
     retval = get_key_if_available();
     if (retval >= 0) {
       vt100_process_outbound_char(retval);
@@ -144,6 +198,9 @@ void main(int argc, char *argv[])
 #endif
   }
 
+  /* Disable interrupts */
+  network_interrupt_disable();
+  
   vt100_exit_terminal();
 
   puts("Connection closed.");
