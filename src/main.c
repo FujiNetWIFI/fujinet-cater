@@ -191,6 +191,10 @@ void main(int argc, char *argv[])
     if (retval >= 0) {
       vt100_process_outbound_char(retval);
     }
+
+    trip = 0;       /* Clear the trip wire.                    */
+    PIA.pactl |= 1; /* Interrupt serviced, ready for next one. */
+    
 #else
     if (kbhit()) {
       vt100_process_outbound_char(cgetc());
