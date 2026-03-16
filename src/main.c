@@ -7,6 +7,14 @@
 #include <cc65.h>
 #include <fujinet-network.h>
 
+
+#if defined(__ATARI__) 
+#include <peekpoke.h>
+#define CH      0x02FC
+#define CH1     0x02F2
+#endif
+
+
 void vt100_init_terminal(void);
 void vt100_exit_terminal(void);
 void __fastcall__ vt100_process_inbound_char(uint8_t c);
@@ -90,6 +98,10 @@ static void readline(char *s)
 
 void main(int argc, char *argv[])
 {
+#if defined(__ATARI__) 
+  uint8_t tick=0;
+#endif
+
   uint8_t cols = (uint8_t)&vt100_screen_cols;
   uint8_t rows = (uint8_t)&vt100_screen_rows;
   register int16_t retval;
@@ -103,6 +115,10 @@ void main(int argc, char *argv[])
     puts("Network init error");
     quit();
   }
+
+#if defined(__ATARI__) 
+  (*(uint8_t*)0x41) = 0; // turn off SIO beeps
+#endif
 
   strcpy(device, "N:");
   if (argc == 2) {
@@ -124,16 +140,28 @@ void main(int argc, char *argv[])
   vt100_init_terminal();
 
   while (connected()) {
-    retval = network_read_nb(device, buffer, sizeof(buffer));
-    if (retval > 0) {
-      bufptr = buffer;
-      while (retval--) {
-        vt100_process_inbound_char(*bufptr++);
+#if defined(__ATARI__) 
+    tick++;
+    if ( tick % 2 == 0 ) {
+      tick=0;
+#endif
+      retval = network_read_nb(device, buffer, sizeof(buffer));
+      if (retval > 0) {
+        bufptr = buffer;
+        while (retval--) {
+          vt100_process_inbound_char(*bufptr++);
+        }
       }
+#if defined(__ATARI__) 
     }
+#endif
 
 #if defined(__ATARI__) || defined(__C64__)
     retval = get_key_if_available();
+#if defined(__ATARI__) 
+    POKE(CH, 0xFF);      // reset key
+    POKE(CH1, 0xFF); 
+#endif
     if (retval >= 0) {
       vt100_process_outbound_char(retval);
     }
