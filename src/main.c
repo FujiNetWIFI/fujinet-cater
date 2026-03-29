@@ -6,7 +6,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <cc65.h>
-#include "plat.h"
+#include "net.h"
 
 void vt100_init_terminal(void);
 void vt100_exit_terminal(void);
@@ -23,15 +23,15 @@ void vt100_beep(void) {
 }
 
 void vt100_quit(void) {
-  plat_net_disconnect();
+  net_disconnect();
 }
 
 void __fastcall__ vt100_send_char(uint8_t c) {
-  plat_net_send_char( c );
+  net_send_char( c );
 }
 
 void __fastcall__ vt100_send_string(uint8_t *s) {
-  plat_net_send_string( s );
+  net_send_string( s );
 }
 
 void quit(void)
@@ -80,7 +80,7 @@ void main(int argc, char *argv[])
   }
 
   // get networking started.
-  plat_net_init();
+  net_init();
 
   // get protocol and destination from user
   strcpy(uri, "N:");
@@ -94,7 +94,7 @@ void main(int argc, char *argv[])
     readline(uri + 2);
   }
 
-  if( ! plat_net_connect( uri )  ) {
+  if( ! net_connect( uri )  ) {
     fputs("Network open error: ", stdout);
     puts(uri + 2);
     quit();
@@ -102,8 +102,8 @@ void main(int argc, char *argv[])
 
   vt100_init_terminal();
 
-  while (plat_net_connected()) {
-    plat_net_update();
+  while (net_connected()) {
+    net_update();
   }
 
   vt100_exit_terminal();

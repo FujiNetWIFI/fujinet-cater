@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../common.h"
-#include "plat.h"
+#include "common.h"
+#include "net.h"
 
 #include "fujinet-network.h"
 
@@ -24,7 +24,7 @@ int16_t get_key_if_available(void);
 
 
 /*-----------------------------------------------------------------------*/
-void plat_net_init() {
+void net_init() {
   if (network_init() != FN_ERR_OK) {
     puts("Network init error");
     quit();
@@ -33,7 +33,7 @@ void plat_net_init() {
 }
 
 /*-----------------------------------------------------------------------*/
-bool plat_net_connect(const char *server){
+bool net_connect(const char *server){
   memcpy((void*) device, server, strlen( server ) );
   if (network_open((char*)device, OPEN_MODE_RW, OPEN_TRANS_NONE) != FN_ERR_OK) {
     return false;   
@@ -42,7 +42,7 @@ bool plat_net_connect(const char *server){
 }
 
 /*-----------------------------------------------------------------------*/
-bool plat_net_connected() {
+bool net_connected() {
   uint16_t bw;
   uint8_t c;
   uint8_t err;
@@ -51,12 +51,12 @@ bool plat_net_connected() {
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_disconnect() {
+void net_disconnect() {
   network_close( (char*)device );
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_update() {
+void net_update() {
   int16_t retval;
   uint8_t *bufptr; 
 
@@ -82,12 +82,12 @@ void plat_net_update() {
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_send_char(char c) {
+void net_send_char(char c) {
   network_write((char*)device, (unsigned char*)&c, 1);
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_send_string(unsigned char *s) {
+void net_send_string(unsigned char *s) {
   network_write((char*)device, s, strlen((char *)s));
 }
 

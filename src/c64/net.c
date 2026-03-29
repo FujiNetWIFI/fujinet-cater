@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../common.h"
-#include "plat.h"
+#include "common.h"
+#include "net.h"
 
 #define LFN 2     // The logical file number to use for I/O
 #define DEV 16    // The network device #
@@ -53,7 +53,7 @@ uint8_t c_network_status(uint16_t *bw, uint8_t *c, uint8_t *err) {
 
 
 /*-----------------------------------------------------------------------*/
-void plat_net_init() {
+void net_init() {
   ihsetup();
   if( cbm_open( CMD,DEV,CMD, "") ) {
     puts("Error opening command channel");
@@ -62,7 +62,7 @@ void plat_net_init() {
 }
 
 /*-----------------------------------------------------------------------*/
-bool plat_net_connect(const char *dev){
+bool net_connect(const char *dev){
   // I'm assuming N: is prepended by main and not used by cbm_open() calls
   memcpy((void*) url, dev+2, strlen( dev+2 ) );
   if( cbm_open( LFN, DEV, SAN, url) ) {
@@ -74,18 +74,18 @@ bool plat_net_connect(const char *dev){
 }
 
 /*-----------------------------------------------------------------------*/
-bool plat_net_connected() {
+bool net_connected() {
   return connected;
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_disconnect() {
+void net_disconnect() {
   cbm_close(LFN);
   cbm_close(CMD);
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_update() {
+void net_update() {
   int16_t retval;
   uint8_t *bufptr;
   if (trip ) {
@@ -111,7 +111,7 @@ void plat_net_update() {
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_send_char(char c) {
+void net_send_char(char c) {
   // cbm.h  Returns the number of actually-written bytes, or -1 in case of an error;
   if( cbm_write( LFN, &c, 1 ) < 0 ) {
     c_network_status( &network_bw, &network_conn, & network_error );
@@ -120,7 +120,7 @@ void plat_net_send_char(char c) {
 }
 
 /*-----------------------------------------------------------------------*/
-void plat_net_send_string(unsigned char *s) {
+void net_send_string(unsigned char *s) {
   if( cbm_write( LFN, s, strlen((char*)s)) < 0 ) {
     c_network_status( &network_bw, &network_conn, & network_error );
     connected = network_conn;
