@@ -1,64 +1,40 @@
 #include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <ctype.h>
 #include <string.h>
 #include <cc65.h>
-#include <fujinet-network.h>
-
-
-#if defined(__ATARI__) 
-#include <peekpoke.h>
-#define CH      0x02FC
-#define CH1     0x02F2
-#endif
-
+#include "net.h"
 
 void vt100_init_terminal(void);
 void vt100_exit_terminal(void);
-void __fastcall__ vt100_process_inbound_char(uint8_t c);
-void __fastcall__ vt100_process_outbound_char(uint8_t c);
 
 extern void vt100_screen_cols;
 extern void vt100_screen_rows;
 #pragma zpsym ("vt100_screen_cols");
 #pragma zpsym ("vt100_screen_rows");
 
-#if defined(__ATARI__) || defined(__C64__)
-int16_t get_key_if_available(void);
-#endif
-
-char device[256];
-uint8_t buffer[1024];
+char uri[256];
 
 void vt100_beep(void) {
   putchar('\a');
 }
 
 void vt100_quit(void) {
-  network_close(device);
+  net_disconnect();
 }
 
 void __fastcall__ vt100_send_char(uint8_t c) {
-  network_write(device, &c, 1);
+  net_send_char( c );
 }
 
 void __fastcall__ vt100_send_string(uint8_t *s) {
-  network_write(device, s, strlen((char *)s));
+  net_send_string( s );
 }
 
-static bool connected(void)
-{
-  uint16_t bw;
-  uint8_t c;
-  uint8_t err;
-
-  network_status(device, &bw, &c, &err);
-  return c;
-}
-
-static void quit(void)
+void quit(void)
 {
   if (doesclrscrafterexit()) {
     puts("Press any key to continue ...");
@@ -69,107 +45,65 @@ static void quit(void)
 
 static void readline(char *s)
 {
-    uint16_t i = 0;
-    char c;
+  uint16_t i = 0;
+  char c;
 
-    cursor(1);
+  cursor(1);
 
-    do {
-      c = cgetc();
+  do {
+    c = cgetc();
 
-      if (isprint(c)) {
-        putchar(c);
-        s[i++] = c;
+    if (isprint(c)) {
+      putchar(c);
+      s[i++] = c;
+    }
+    else if ((c == CH_CURS_LEFT) || (c == CH_DEL)) {
+      if (i) {
+        putchar(CH_CURS_LEFT);
+        putchar(' ');
+        putchar(CH_CURS_LEFT);
+        --i;
       }
-      else if ((c == CH_CURS_LEFT) || (c == CH_DEL)) {
-        if (i) {
-          putchar(CH_CURS_LEFT);
-          putchar(' ');
-          putchar(CH_CURS_LEFT);
-          --i;
-        }
-      }
-    } while (c != CH_ENTER);
-    putchar('\n');
-    s[i] = '\0';
+    }
+  } while (c != CH_ENTER);
+  putchar('\n');
+  s[i] = '\0';
 
-    cursor(0);
+  cursor(0);
 }
 
 void main(int argc, char *argv[])
 {
-#if defined(__ATARI__) 
-  uint8_t tick=0;
-#endif
-
-  uint8_t cols = (uint8_t)&vt100_screen_cols;
-  uint8_t rows = (uint8_t)&vt100_screen_rows;
-  register int16_t retval;
-  register uint8_t *bufptr;
 
   if (doesclrscrafterexit()) {
     clrscr();
   }
 
-  if (network_init() != FN_ERR_OK) {
-    puts("Network init error");
-    quit();
-  }
+  // get networking started.
+  net_init();
 
-#if defined(__ATARI__) 
-  (*(uint8_t*)0x41) = 0; // turn off SIO beeps
-#endif
-
-  strcpy(device, "N:");
+  // get protocol and destination from user
+  strcpy(uri, "N:");
   if (argc == 2) {
-    strcpy(device + 2, argv[1]);
+    strcpy(uri + 2, argv[1]);
   } else {
     puts("URL examples:");
     puts("    telnet://host");
     puts("    ssh://user:password@host\n");
     puts("Enter Telnet or SSH URL:");
-    readline(device + 2);
+    readline(uri + 2);
   }
 
-  if (network_open(device, OPEN_MODE_RW, OPEN_TRANS_NONE) != FN_ERR_OK) {
+  if( ! net_connect( uri )  ) {
     fputs("Network open error: ", stdout);
-    puts(device + 2);
+    puts(uri + 2);
     quit();
   }
-  
+
   vt100_init_terminal();
 
-  while (connected()) {
-#if defined(__ATARI__) 
-    tick++;
-    if ( tick % 2 == 0 ) {
-      tick=0;
-#endif
-      retval = network_read_nb(device, buffer, sizeof(buffer));
-      if (retval > 0) {
-        bufptr = buffer;
-        while (retval--) {
-          vt100_process_inbound_char(*bufptr++);
-        }
-      }
-#if defined(__ATARI__) 
-    }
-#endif
-
-#if defined(__ATARI__) || defined(__C64__)
-    retval = get_key_if_available();
-#if defined(__ATARI__) 
-    POKE(CH, 0xFF);      // reset key
-    POKE(CH1, 0xFF); 
-#endif
-    if (retval >= 0) {
-      vt100_process_outbound_char(retval);
-    }
-#else
-    if (kbhit()) {
-      vt100_process_outbound_char(cgetc());
-    }
-#endif
+  while (net_connected()) {
+    net_update();
   }
 
   vt100_exit_terminal();
