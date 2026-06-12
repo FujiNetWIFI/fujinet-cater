@@ -4,7 +4,7 @@ TARGETS = atari apple2enh c64
 PROGRAM := cater
 
 # Set this to the version of FN-LIB you wish to use in this project:
-export FUJINET_LIB_VERSION := 4.7.4
+export FUJINET_LIB_VERSION := 4.11.2
 
 # Set DEBUG to true or false to see more or less output about what is going on.
 DEBUG := false
