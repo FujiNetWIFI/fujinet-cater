@@ -40,7 +40,7 @@ You need to check out [CaTer Docu - Keyboard](https://www.opppf.de/Cater/doku.ht
 
 The key combination `C=`+`Q` quits the current Telnet session.
 
-In a shell, enter these commands for full functionality:
+The C64 version is built with fujinet-lib 5, so it needs FujiNet firmware with the current IEC protocol. That firmware can tell the server the terminal type and size: add `?term=vt100&cols=40&rows=25` to the URL, for example `telnet://host?term=vt100&cols=40&rows=25` or `ssh://user:password@host?term=vt100&cols=40&rows=25`. In a shell, enter these commands for full functionality (with that URL, only the first is needed):
 ```
 export LANG=C
 export TERM=vt100

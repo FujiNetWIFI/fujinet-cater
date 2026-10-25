@@ -5,6 +5,9 @@ PROGRAM := cater
 
 # Set this to the version of FN-LIB you wish to use in this project:
 export FUJINET_LIB_VERSION := 4.7.4
+# A target can use another version: the C64 needs fujinet-lib 5 for the IEC
+# protocol of current FujiNet firmware
+export FUJINET_LIB_VERSION_c64 := 5.0.0
 
 # Set DEBUG to true or false to see more or less output about what is going on.
 DEBUG := false
