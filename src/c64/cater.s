@@ -239,6 +239,10 @@ civis .res 1
 ; --- save crsr color for XCon/XCoff ---
 XCrsr .res 1 ; safe crsr colour
 
+; --- charset before InitChar ---
+; ExitChar puts it back
+XCharset .res 1
+
 ; --- buffer for addDecDig ---
 mul10buf .res 1
 
@@ -1968,6 +1972,7 @@ IC1     lda (zVector),y
         ora #$01
         sta $dd00
         lda $d018
+        sta XCharset
         and #$f1
         ora #$02
         sta $d018
@@ -1988,10 +1993,8 @@ ExitChar
         and #$fc
         ora #$03
         sta $dd00
-        lda $d018
-        and #$f1
-        ora #$04
-        sta $d018
+        lda XCharset  ; uppercase or lowercase,
+        sta $d018     ; as it was
         lda #04
         sta VideoAddr
         cli

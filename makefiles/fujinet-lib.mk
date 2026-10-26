@@ -5,8 +5,13 @@ ifeq ($(DEBUG),true)
     $(info >Starting fujinet-lib.mk)
 endif
 
+ifneq ($(FUJINET_LIB_VERSION_$(CURRENT_TARGET)),)
+    FUJINET_LIB_VERSION := $(FUJINET_LIB_VERSION_$(CURRENT_TARGET))
+endif
+
 $(info >>>> Using FUJINET_LIB_VERSION=$(FUJINET_LIB_VERSION))
-# set FN_LIB_VERSION in your local Makefile
+# set FN_LIB_VERSION in your local Makefile, and FUJINET_LIB_VERSION_<target>
+# for a target that needs another version
 
 
 FUJINET_LIB = $(CACHE_DIR)/fujinet-lib
